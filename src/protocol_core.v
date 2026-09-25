@@ -94,7 +94,7 @@ always @(posedge clk) begin
     end
 end
 
-
+end
 endmodule
 
 `default_nettype wire

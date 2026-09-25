@@ -4,8 +4,6 @@
  */
 
 `default_nettype none
-`include "protocol_core.v"
-`include "serial_loader.v"
 module tt_um_protocol_emulator (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
