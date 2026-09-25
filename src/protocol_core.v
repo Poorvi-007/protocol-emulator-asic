@@ -24,11 +24,13 @@ module protocol_core (
 
     // Current instruction
     reg [15:0] instruction;
+    reg [7:0] wait_counter;
 
     // Opcodes
     localparam OP_NOP   = 4'b0000;
     localparam OP_WRITE = 4'b0001;
     localparam OP_READ  = 4'b0010;
+    localparam OP_WAIT  = 4'b0011;
 
     // Example program
     initial begin
@@ -56,6 +58,7 @@ always @(posedge clk) begin
         pc          <= 4'd0;
         instruction <= 16'd0;
         gpio_out    <= 8'd0;
+        wait_counter <= 8'd0;
 
 
     end else begin
@@ -82,6 +85,17 @@ always @(posedge clk) begin
     gpio_out <= gpio_in;
     end
 
+    OP_WAIT: begin
+    if (wait_counter == 0) begin
+        wait_counter <= program_mem[pc][7:0];
+    end else if (wait_counter == 1) begin
+        wait_counter <= 8'd0;
+        pc <= pc + 1'b1;
+    end else begin
+        wait_counter <= wait_counter - 1'b1;
+    end
+end
+
             default: begin
                 gpio_out <= gpio_out;
             end
@@ -89,7 +103,8 @@ always @(posedge clk) begin
         endcase
 
         instruction <= program_mem[pc];
-         pc <= pc + 1'b1;
+         if (program_mem[pc][15:12] != OP_WAIT)
+            pc <= pc + 1'b1;
      
     end
 end
