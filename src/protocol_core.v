@@ -25,12 +25,14 @@ module protocol_core (
     // Current instruction
     reg [15:0] instruction;
     reg [7:0] wait_counter;
+    reg [7:0] gpio_in_prev;
 
     // Opcodes
     localparam OP_NOP   = 4'b0000;
     localparam OP_WRITE = 4'b0001;
     localparam OP_READ  = 4'b0010;
     localparam OP_WAIT  = 4'b0011;
+    localparam OP_WAIT_EDGE = 4'b0100;
 
     // Example program
     initial begin
@@ -53,62 +55,71 @@ module protocol_core (
         program_mem[15] = 16'b0;
     end
 
+
 always @(posedge clk) begin
     if (!rst_n) begin
-        pc          <= 4'd0;
-        instruction <= 16'd0;
-        gpio_out    <= 8'd0;
+        pc           <= 4'd0;
+        instruction  <= 16'd0;
+        gpio_out     <= 8'd0;
         wait_counter <= 8'd0;
-
+        gpio_in_prev <= 8'd0;
 
     end else begin
+        // Remember the previous GPIO input for WAIT_EDGE.
+        gpio_in_prev <= gpio_in;
 
-        // Programming mode: load instructions only
-        if (program_mode) begin
-            if (load_en) begin
-                program_mem[load_addr] <= load_data;
-            end
+        // Load instructions whenever the serial loader produces a valid write.
+        if (load_en) begin
+            program_mem[load_addr] <= load_data;
+        end
 
-        end else begin
-
-            // Normal mode: execute program
+        // Execute the program only when not in programming mode.
+        if (!program_mode) begin
             case (program_mem[pc][15:12])
 
-            OP_NOP: begin
-                gpio_out <= gpio_out;
-            end
+                OP_NOP: begin
+                    gpio_out <= gpio_out;
+                end
 
-            OP_WRITE: begin
-                gpio_out <= program_mem[pc][7:0];
-            end
-    OP_READ: begin
-    gpio_out <= gpio_in;
+                OP_WRITE: begin
+                    gpio_out <= program_mem[pc][7:0];
+                end
+
+                OP_READ: begin
+                    gpio_out <= gpio_in;
+                end
+
+                OP_WAIT: begin
+                    if (wait_counter == 0) begin
+                        wait_counter <= program_mem[pc][7:0];
+                    end else if (wait_counter == 1) begin
+                        wait_counter <= 8'd0;
+                        pc <= pc + 1'b1;
+                    end else begin
+                        wait_counter <= wait_counter - 1'b1;
+                    end
+                end
+
+                OP_WAIT_EDGE: begin
+                    if (gpio_in != gpio_in_prev) begin
+                        pc <= pc + 1'b1;
+                    end
+                end
+
+                default: begin
+                    gpio_out <= gpio_out;
+                end
+
+            endcase
+
+            instruction <= program_mem[pc];
+
+            // WAIT and WAIT_EDGE control their own PC.
+            if ((program_mem[pc][15:12] != OP_WAIT) &&
+                (program_mem[pc][15:12] != OP_WAIT_EDGE))
+                pc <= pc + 1'b1;
+        end
     end
-
-    OP_WAIT: begin
-    if (wait_counter == 0) begin
-        wait_counter <= program_mem[pc][7:0];
-    end else if (wait_counter == 1) begin
-        wait_counter <= 8'd0;
-        pc <= pc + 1'b1;
-    end else begin
-        wait_counter <= wait_counter - 1'b1;
-    end
-end
-
-            default: begin
-                gpio_out <= gpio_out;
-            end
-
-        endcase
-
-        instruction <= program_mem[pc];
-         if (program_mem[pc][15:12] != OP_WAIT)
-            pc <= pc + 1'b1;
-     
-    end
-end
-
 end
 endmodule
 
