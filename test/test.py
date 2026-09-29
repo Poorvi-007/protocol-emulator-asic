@@ -114,4 +114,111 @@ async def test_wait_edge(dut):
     await ClockCycles(dut.clk, 3)
 
     assert dut.uo_out.value == 4
-    
+	
+@cocotb.test()
+async def test_jump_if_high_instruction(dut):
+    dut._log.info("JUMP_IF_HIGH instruction test")
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode.
+    dut.ui_in.value = 4
+    await ClockCycles(dut.clk, 1)
+
+    # Address 0: JUMP_IF_HIGH, input bit 0, jump to address 2
+    await send_instruction(dut, 0x6002)
+
+    # Address 1: WRITE 2
+    await send_instruction(dut, 0x1002)
+
+    # Address 2: WRITE 4
+    await send_instruction(dut, 0x1004)
+
+    # Exit programming mode.
+    # Input bit 0 is HIGH.
+    dut.ui_in.value = 1
+    await ClockCycles(dut.clk, 1)
+
+    # JUMP_IF_HIGH should jump directly:
+    # address 0 -> address 2 -> WRITE 4
+    await ClockCycles(dut.clk, 2)
+
+    assert dut.uo_out.value == 4
+
+@cocotb.test()
+async def test_jump_instruction(dut):
+    dut._log.info("JUMP instruction test")
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode.
+    dut.ui_in.value = 4
+    await ClockCycles(dut.clk, 1)
+
+    # Address 0: JUMP to address 2
+    await send_instruction(dut, 0x5002)
+
+    # Address 1: WRITE 1
+    await send_instruction(dut, 0x1001)
+
+    # Address 2: WRITE 4
+    await send_instruction(dut, 0x1004)
+
+    # Exit programming mode.
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, 1)
+
+    # JUMP should skip address 1 and execute address 2.
+    await ClockCycles(dut.clk, 2)
+
+    assert dut.uo_out.value == 4
+
+
+@cocotb.test()
+async def test_read_instruction(dut):
+    dut._log.info("READ instruction test")
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode.
+    dut.ui_in.value = 4
+    await ClockCycles(dut.clk, 1)
+
+    # Address 0: READ GPIO input.
+    await send_instruction(dut, 0x2000)
+
+    # Exit programming mode with GPIO input = 0x55.
+    dut.ui_in.value = 0x51
+    await ClockCycles(dut.clk, 1)
+
+    # Allow READ to execute.
+    await ClockCycles(dut.clk, 1)
+
+    assert dut.uo_out.value == 0x51

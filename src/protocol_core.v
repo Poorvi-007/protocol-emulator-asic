@@ -33,6 +33,8 @@ module protocol_core (
     localparam OP_READ  = 4'b0010;
     localparam OP_WAIT  = 4'b0011;
     localparam OP_WAIT_EDGE = 4'b0100;
+    localparam OP_JUMP = 4'b0101;
+    localparam OP_JUMP_IF_HIGH = 4'b0110;
 
     // Example program
     initial begin
@@ -71,10 +73,12 @@ always @(posedge clk) begin
         // Load instructions whenever the serial loader produces a valid write.
         if (load_en) begin
             program_mem[load_addr] <= load_data;
+	    
         end
 
         // Execute the program only when not in programming mode.
         if (!program_mode) begin
+        
             case (program_mem[pc][15:12])
 
                 OP_NOP: begin
@@ -105,6 +109,16 @@ always @(posedge clk) begin
                         pc <= pc + 1'b1;
                     end
                 end
+                OP_JUMP: begin
+                     pc <= program_mem[pc][3:0];
+                end
+                OP_JUMP_IF_HIGH: begin
+                    if (gpio_in[program_mem[pc][11:8]]) begin
+                        pc <= program_mem[pc][3:0];
+                    end else begin
+                        pc <= pc + 1'b1;
+                    end
+                end
 
                 default: begin
                     gpio_out <= gpio_out;
@@ -114,15 +128,23 @@ always @(posedge clk) begin
 
             instruction <= program_mem[pc];
 
-            // WAIT and WAIT_EDGE control their own PC.
+            
+
+            // WAIT, WAIT_EDGE, JUMP, and JUMP_IF_HIGH control their own PC.
             if ((program_mem[pc][15:12] != OP_WAIT) &&
-                (program_mem[pc][15:12] != OP_WAIT_EDGE))
+                (program_mem[pc][15:12] != OP_WAIT_EDGE) &&
+                (program_mem[pc][15:12] != OP_JUMP) &&
+                (program_mem[pc][15:12] != OP_JUMP_IF_HIGH)) begin
                 pc <= pc + 1'b1;
+            end
         end
     end
 end
+
 endmodule
 
 `default_nettype wire
+
+
 
 
