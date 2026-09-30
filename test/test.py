@@ -222,3 +222,40 @@ async def test_read_instruction(dut):
     await ClockCycles(dut.clk, 1)
 
     assert dut.uo_out.value == 0x51
+
+    @cocotb.test()
+async def test_nop_instruction(dut):
+    dut._log.info("NOP instruction test")
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode.
+    dut.ui_in.value = 4
+    await ClockCycles(dut.clk, 1)
+
+    # Address 0: WRITE 7
+    await send_instruction(dut, 0x1007)
+
+    # Address 1: NOP
+    await send_instruction(dut, 0x0000)
+
+    # Exit programming mode.
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, 1)
+
+    # Allow WRITE 7 to execute.
+    await ClockCycles(dut.clk, 1)
+    assert dut.uo_out.value == 7
+
+    # NOP must leave the output unchanged.
+    await ClockCycles(dut.clk, 1)
+    assert dut.uo_out.value == 7
