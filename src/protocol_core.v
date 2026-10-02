@@ -35,6 +35,7 @@ module protocol_core (
     localparam OP_WAIT_EDGE = 4'b0100;
     localparam OP_JUMP = 4'b0101;
     localparam OP_JUMP_IF_HIGH = 4'b0110;
+    localparam OP_JUMP_IF_LOW = 4'b0111;
 
     // Example program
     initial begin
@@ -134,7 +135,8 @@ always @(posedge clk) begin
             if ((program_mem[pc][15:12] != OP_WAIT) &&
                 (program_mem[pc][15:12] != OP_WAIT_EDGE) &&
                 (program_mem[pc][15:12] != OP_JUMP) &&
-                (program_mem[pc][15:12] != OP_JUMP_IF_HIGH)) begin
+                (program_mem[pc][15:12] != OP_JUMP_IF_HIGH) &&
+                 (program_mem[pc][15:12] != OP_JUMP_IF_LOW)) begin
                 pc <= pc + 1'b1;
             end
         end

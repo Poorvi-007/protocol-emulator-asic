@@ -223,7 +223,7 @@ async def test_read_instruction(dut):
 
     assert dut.uo_out.value == 0x51
 
-    @cocotb.test()
+@cocotb.test()
 async def test_nop_instruction(dut):
     dut._log.info("NOP instruction test")
 
@@ -259,3 +259,42 @@ async def test_nop_instruction(dut):
     # NOP must leave the output unchanged.
     await ClockCycles(dut.clk, 1)
     assert dut.uo_out.value == 7
+
+@cocotb.test()
+async def test_jump_if_low_instruction(dut):
+    dut._log.info("JUMP_IF_LOW instruction test")
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode.
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, 1)
+
+    # Address 0: JUMP_IF_LOW, input bit 0, jump to address 2.
+    await send_instruction(dut, 0x7002)
+
+    # Address 1: WRITE 1.
+    await send_instruction(dut, 0x1001)
+
+    # Address 2: WRITE 4.
+    await send_instruction(dut, 0x1004)
+
+    # Exit programming mode.
+    # Input bit 0 is LOW.
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, 1)
+
+    # JUMP_IF_LOW should jump directly:
+    # address 0 -> address 2 -> WRITE 4
+    await ClockCycles(dut.clk, 2)
+
+    assert dut.uo_out.value == 4
