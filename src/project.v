@@ -51,3 +51,4 @@ protocol_core core (
   // List all unused inputs to prevent warnings
 
 endmodule
+`default_nettype wire
