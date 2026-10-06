@@ -298,3 +298,43 @@ async def test_jump_if_low_instruction(dut):
     await ClockCycles(dut.clk, 2)
 
     assert dut.uo_out.value == 4
+
+@cocotb.test()
+async def test_shift_in_instruction(dut):
+    """Test SHIFT_IN instruction."""
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode.
+    dut.ui_in.value = 4
+    await ClockCycles(dut.clk, 1)
+
+    # Address 0: SHIFT_IN, input bit 0.
+    await send_instruction(dut, 0x8000)
+
+    # Address 1: SHIFT_IN, input bit 0.
+    await send_instruction(dut, 0x8000)
+
+    # Exit programming mode with input bit 0 HIGH.
+    dut.ui_in.value = 1
+    await ClockCycles(dut.clk, 1)
+
+# The first SHIFT_IN has executed:
+# 00000000 -> 00000001.
+
+# Set input bit 0 LOW before the second SHIFT_IN.
+    dut.ui_in.value = 0
+
+    # Second SHIFT_IN: 00000001 -> 00000010.
+    await ClockCycles(dut.clk, 2)
+
+    assert dut.uo_out.value.integer == 2
