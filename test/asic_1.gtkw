@@ -1,0 +1,30 @@
+[*]
+[*] GTKWave Analyzer v3.3.127 (w)1999-2026 BSI
+[*] Wed Oct  7 15:38:23 2026
+[*]
+[dumpfile] "C:\Users\sshri\Desktop\protocol-emulator-asic\test\tb.fst"
+[dumpfile_mtime] "Wed Oct  7 15:23:19 2026"
+[dumpfile_size] 2481
+[savefile] "C:\Users\sshri\Desktop\protocol-emulator-asic\test\asic_1.gtkw"
+[timestart] 0
+[size] 1000 600
+[pos] -1 -1
+*-31.721367 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb.
+[treeopen] tb.user_project.
+[sst_width] 280
+[signals_width] 200
+[sst_expanded] 1
+[sst_vpaned_height] 156
+@28
+tb.clk
+@22
+tb.ui_in[7:0]
+tb.uio_out[7:0]
+tb.user_project.core.pc[3:0]
+tb.user_project.core.instruction[15:0]
+tb.user_project.core.shift_reg[7:0]
+@23
+tb.user_project.core.gpio_out[7:0]
+[pattern_trace] 1
+[pattern_trace] 0

@@ -338,3 +338,46 @@ async def test_shift_in_instruction(dut):
     await ClockCycles(dut.clk, 2)
 
     assert dut.uo_out.value.integer == 2
+
+
+@cocotb.test()
+async def test_shift_out_instruction(dut):
+    """Test SHIFT_OUT instruction."""
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode.
+    dut.ui_in.value = 4
+    await ClockCycles(dut.clk, 1)
+
+    # Program:
+    # Address 0: SHIFT_IN, input bit 0
+    # Address 1: SHIFT_IN, input bit 0
+    # Address 2: SHIFT_OUT
+    await send_instruction(dut, 0x8000)
+    await send_instruction(dut, 0x8000)
+    await send_instruction(dut, 0x9000)
+
+    # Exit programming mode with input bit 0 HIGH.
+    dut.ui_in.value = 1
+    await ClockCycles(dut.clk, 1)
+
+    # Execute first SHIFT_IN: 0 -> 1.
+    await ClockCycles(dut.clk, 1)
+
+    # Execute second SHIFT_IN: 1 -> 3.
+    await ClockCycles(dut.clk, 1)
+
+    # Execute SHIFT_OUT.
+    await ClockCycles(dut.clk, 1)
+
+    assert dut.uo_out.value.to_unsigned() == 3

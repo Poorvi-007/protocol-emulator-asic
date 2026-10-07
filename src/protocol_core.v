@@ -38,6 +38,7 @@ module protocol_core (
     localparam OP_JUMP_IF_HIGH = 4'b0110;
     localparam OP_JUMP_IF_LOW = 4'b0111;
     localparam OP_SHIFT_IN = 4'b1000;
+    localparam OP_SHIFT_OUT = 4'b1001;
 
     // Example program
     initial begin
@@ -129,6 +130,11 @@ OP_SHIFT_IN: begin
     shift_reg <= {shift_reg[6:0], gpio_in[program_mem[pc][11:8]]};
     gpio_out <= {shift_reg[6:0], gpio_in[program_mem[pc][11:8]]};
 end
+OP_SHIFT_OUT: begin
+    gpio_out <= shift_reg;
+end
+
+
                 default: begin
                     gpio_out <= gpio_out;
                 end
@@ -154,7 +160,6 @@ end
 endmodule
 
 `default_nettype wire
-
 
 
 
