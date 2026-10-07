@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocol Emulator ASIC</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        header {
+            background: #111827;
+            padding: 20px 30px;
+            border-bottom: 1px solid #334155;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        header p {
+            margin: 6px 0 0;
+            color: #94a3b8;
+        }
+
+        .container {
+            padding: 25px;
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .run {
+            background: #22c55e;
+            color: white;
+        }
+
+        .pause {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .reset {
+            background: #ef4444;
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #38bdf8;
+        }
+
+        .value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+
+        .binary {
+            font-family: monospace;
+            letter-spacing: 3px;
+        }
+
+        .status {
+            color: #22c55e;
+        }
+
+        .memory {
+            grid-column: span 2;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 9px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            color: #94a3b8;
+        }
+
+        .waveform {
+            grid-column: span 3;
+        }
+
+        .signal {
+            height: 35px;
+            background: #0f172a;
+            margin: 10px 0;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .signal-label {
+            position: absolute;
+            left: 10px;
+            top: 9px;
+            font-family: monospace;
+            z-index: 2;
+        }
+
+        .line {
+            position: absolute;
+            top: 22px;
+            left: 0;
+            width: 100%;
+            border-top: 3px solid #38bdf8;
+        }
+
+        .line.high {
+            top: 8px;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .memory,
+            .waveform {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Protocol Emulator ASIC</h1>
+    <p>Programmable digital protocol emulator</p>
+</header>
+
+<div class="container">
+
+    <div class="controls">
+        <button class="run">▶ RUN</button>
+        <button class="pause">⏸ PAUSE</button>
+        <button class="reset">↻ RESET</button>
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>System Status</h2>
+            <div class="value status">READY</div>
+        </div>
+
+        <div class="card">
+            <h2>Clock</h2>
+            <div class="value">0 MHz</div>
+        </div>
+
+        <div class="card">
+            <h2>Program Counter</h2>
+            <div class="value">0</div>
+        </div>
+
+        <div class="card">
+            <h2>Current Instruction</h2>
+            <div class="value">NOP</div>
+        </div>
+
+        <div class="card">
+            <h2>Shift Register</h2>
+            <div class="value binary">00000000</div>
+        </div>
+
+        <div class="card">
+            <h2>Protocol</h2>
+            <div class="value">UART</div>
+        </div>
+
+        <div class="card">
+            <h2>GPIO Input</h2>
+            <div class="value binary">00000000</div>
+        </div>
+
+        <div class="card">
+            <h2>GPIO Output</h2>
+            <div class="value binary">00000000</div>
+        </div>
+
+        <div class="card memory">
+            <h2>Program Memory</h2>
+
+            <table>
+                <tr>
+                    <th>Address</th>
+                    <th>Instruction</th>
+                    <th>Opcode</th>
+                    <th>Data</th>
+                </tr>
+
+                <tr>
+                    <td>0</td>
+                    <td>WRITE</td>
+                    <td>0001</td>
+                    <td>00000001</td>
+                </tr>
+
+                <tr>
+                    <td>1</td>
+                    <td>WRITE</td>
+                    <td>0001</td>
+                    <td>00000010</td>
+                </tr>
+
+                <tr>
+                    <td>2</td>
+                    <td>WRITE</td>
+                    <td>0001</td>
+                    <td>00000100</td>
+                </tr>
+
+                <tr>
+                    <td>3</td>
+                    <td>READ</td>
+                    <td>0010</td>
+                    <td>00000000</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="card waveform">
+
+            <h2>Signal Monitor</h2>
+
+            <div class="signal">
+                <span class="signal-label">CLK</span>
+                <div class="line high"></div>
+            </div>
+
+            <div class="signal">
+                <span class="signal-label">GPIO_IN</span>
+                <div class="line"></div>
+            </div>
+
+            <div class="signal">
+                <span class="signal-label">GPIO_OUT</span>
+                <div class="line high"></div>
+            </div>
+
+            <div class="signal">
+                <span class="signal-label">SHIFT_REG</span>
+                <div class="line"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
