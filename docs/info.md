@@ -1,20 +1,34 @@
-<!---
+# Protocol Emulator ASIC
 
-This file is used to generate your project datasheet. Please fill in the information below and delete any unused
-sections.
-
-You can also include images in this folder and reference them in the markdown. Each image must be less than
-512 kb in size, and the combined size of all images must be less than 1 MB.
--->
+A programmable ASIC protocol emulator designed to execute configurable digital communication protocols.
 
 ## How it works
 
-Explain how your project works
+The design contains a small programmable protocol engine with instruction memory, a serial program loader, GPIO inputs and outputs, timing control, branching, edge detection, and shift operations.
+
+Programs are loaded into the instruction memory through the serial loader. The protocol engine then executes the loaded instructions cycle by cycle.
+
+The instruction set currently includes:
+
+- NOP
+- WRITE
+- READ
+- WAIT
+- WAIT_EDGE
+- JUMP
+- JUMP_IF_HIGH
+- JUMP_IF_LOW
+- SHIFT_IN
+- SHIFT_OUT
+
+This programmable architecture is intended to support protocols such as UART, SPI, and I2C through software-defined instruction sequences rather than fixed hardware peripherals.
 
 ## How to test
 
-Explain how to use your project
+The project includes Cocotb tests and an Icarus Verilog simulation environment.
 
-## External hardware
+From the `test` directory, run:
 
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+```bash
+cd /c/Users/sshri/Desktop/protocol-emulator-asic/test
+make
