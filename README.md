@@ -1,42 +1,41 @@
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
+# Protocol Emulator ASIC
 
-# Tiny Tapeout Verilog Project Template
+A programmable digital protocol emulator designed for the **Jane Street Protocol Emulator ASIC Competition** using the **Tiny Tapeout / IHP 130nm CMOS5L** flow.
 
-- [Read the documentation for project](docs/info.md)
+The goal of this project is to create a small, reprogrammable hardware engine that can emulate different digital communication protocols through programmable instructions rather than implementing each protocol as fixed hardware.
 
-## What is Tiny Tapeout?
+## Project Status
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+Current RTL implementation includes:
 
-To learn more and get started, visit https://tinytapeout.com.
+- Programmable 16-bit instruction memory
+- Serial instruction loader
+- Program execution engine
+- GPIO input and output
+- Conditional branching
+- Wait and edge-detection operations
+- 8-bit shift register
+- SHIFT_IN and SHIFT_OUT operations
+- Cocotb verification
+- Icarus Verilog simulation
+- GTKWave waveform inspection
+- Tiny Tapeout / LibreLane ASIC flow
 
-## Set up your Verilog project
+### Current verification
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+The current instruction set has **9 Cocotb tests**, and the latest stable RTL checkpoint passes:
 
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
+**9/9 tests**
 
-## Enable GitHub actions to build the results page
+The current stable instruction set contains:
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
-
-## Resources
-
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
-
-## What next?
-
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+1. NOP
+2. WRITE
+3. READ
+4. WAIT
+5. WAIT_EDGE
+6. JUMP
+7. JUMP_IF_HIGH
+8. JUMP_IF_LOW
+9. SHIFT_IN
+10. SHIFT_OUT
