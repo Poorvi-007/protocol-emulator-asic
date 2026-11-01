@@ -126,6 +126,14 @@ OP_JUMP_IF_HIGH: begin
     end
 end
 
+OP_JUMP_IF_LOW: begin
+    if (!gpio_in[program_mem[pc][11:8]]) begin
+        pc <= program_mem[pc][3:0];
+    end else begin
+        pc <= pc + 1'b1;
+    end
+end
+
 OP_SHIFT_IN: begin
     shift_reg <= {shift_reg[6:0], gpio_in[program_mem[pc][11:8]]};
     gpio_out <= {shift_reg[6:0], gpio_in[program_mem[pc][11:8]]};
