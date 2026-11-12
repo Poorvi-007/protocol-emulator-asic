@@ -17,6 +17,8 @@ module tt_um_protocol_emulator (
 
   // All output pins must be assigned. If not used, assign to 0.
 wire [7:0] gpio_out;
+wire [7:0] timing_divider;
+wire timing_tick;
 
 wire        load_en;
 wire [3:0]  load_addr;
@@ -39,11 +41,21 @@ protocol_core core (
     .rst_n(rst_n),
     .gpio_in(ui_in),
     .gpio_out(gpio_out),
+    .timing_divider(timing_divider),
     .load_en(load_en),
     .load_addr(load_addr),
     .load_data(load_data),
-    .program_mode(program_mode)
+    .program_mode(program_mode),
+    .timing_tick(timing_tick)
 );
+timing_generator timer (
+    .clk(clk),
+    .rst_n(rst_n),
+    .enable(1'b1),
+    .divider({8'd0, timing_divider}),
+    .tick(timing_tick)
+);
+
   assign uo_out  = gpio_out;
   assign uio_out = 8'b0;
   assign uio_oe  = 8'b0;

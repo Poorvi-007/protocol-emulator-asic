@@ -381,3 +381,90 @@ async def test_shift_out_instruction(dut):
     await ClockCycles(dut.clk, 1)
 
     assert dut.uo_out.value.to_unsigned() == 3
+
+
+@cocotb.test()
+async def test_call_return_instruction(dut):
+    """Test CALL and RETURN instructions."""
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode.
+    dut.ui_in.value = 4
+    await ClockCycles(dut.clk, 1)
+
+    # Address 0: CALL address 4
+    await send_instruction(dut, 0xA004)
+
+    # Address 1: WRITE 0x11
+    await send_instruction(dut, 0x1011)
+
+    # Address 2: JUMP to address 2
+    await send_instruction(dut, 0x5002)
+
+    # Address 3: NOP
+    await send_instruction(dut, 0x0000)
+
+    # Address 4: WRITE 0x44
+    await send_instruction(dut, 0x1044)
+
+    # Address 5: RETURN
+    await send_instruction(dut, 0xB000)
+
+    # Exit programming mode.
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, 1)
+
+    # CALL should execute the subroutine.
+    await ClockCycles(dut.clk, 2)
+    assert dut.uo_out.value.to_unsigned() == 0x44
+
+    # RETURN should resume the main program.
+    await ClockCycles(dut.clk, 2)
+    assert dut.uo_out.value.to_unsigned() == 0x11
+@cocotb.test()
+async def test_register_bank(dut):
+    """Test configuration register write and read."""
+
+    clock = Clock(dut.clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+
+    dut.ena.value = 1
+    dut.ui_in.value = 0
+    dut.uio_in.value = 0
+    dut.rst_n.value = 0
+
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+
+    # Enter programming mode
+    dut.ui_in.value = 4
+    await ClockCycles(dut.clk, 1)
+
+    # Address 0: Write 0x55 into register 2
+    await send_instruction(dut, 0xC255)
+
+    # Address 1: Read register 2
+    await send_instruction(dut, 0xD200)
+
+    # Address 2: Infinite loop
+    await send_instruction(dut, 0x5002)
+
+    # Exit programming mode
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, 1)
+
+    # Execute register write and read
+    await ClockCycles(dut.clk, 3)
+
+    assert dut.uo_out.value.to_unsigned() == 0x55
+    
