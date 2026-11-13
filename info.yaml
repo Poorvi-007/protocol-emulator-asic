@@ -15,6 +15,10 @@ project:
     - "protocol_core.v"
     - "serial_loader.v"
     - "timing_generator.v"
+    - "uart_timing_generator.v"
+    - "uart_tx.v"
+    - "uart_rx.v"
+    - "spi_master.v"
 
 pinout:
   # Inputs
@@ -38,12 +42,12 @@ pinout:
   uo[7]: "GPIO_OUT[7]"
 
   # Bidirectional pins
-  uio[0]: "Unused"
-  uio[1]: "Unused"
-  uio[2]: "Unused"
-  uio[3]: "Unused"
-  uio[4]: "Unused"
-  uio[5]: "Unused"
+  uio[0]: "UART_RX"
+  uio[1]: "UART_TX"
+  uio[2]: "SPI_SCLK"
+  uio[3]: "SPI_MOSI"
+  uio[4]: "SPI_MISO"
+  uio[5]: "SPI_CS_N"
   uio[6]: "Unused"
   uio[7]: "Unused"
 
