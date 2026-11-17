@@ -30,10 +30,13 @@ module protocol_core (
     output wire [7:0] spi_tx_data,
     output wire [7:0] spi_divider,
     output wire [1:0] spi_mode,
-    output reg        spi_start
+    output reg        spi_start,
+    output reg        execution_progress,
+    output wire       wait_active
 );
 
     reg [3:0] pc;
+    reg [3:0] pc_prev;
     reg [15:0] program_mem [0:15];
 
     reg [15:0] instruction;
@@ -90,6 +93,13 @@ module protocol_core (
     localparam OP_SHIFT_OUT    = 4'b1001;
     localparam OP_CALL         = 4'b1010;
     localparam OP_RETURN       = 4'b1011;
+
+    // SpaceGuard watchdog monitoring signals
+    assign wait_active = !program_mode &&
+        ((program_mem[pc][15:12] == OP_WAIT) ||
+         (program_mem[pc][15:12] == OP_WAIT_EDGE));
+
+
     localparam OP_REG_WRITE    = 4'b1100;
     localparam OP_REG_READ     = 4'b1101;
 
@@ -140,6 +150,8 @@ module protocol_core (
     always @(posedge clk) begin
         if (!rst_n) begin
             pc                     <= 4'd0;
+            pc_prev                <= 4'd0;
+            execution_progress     <= 1'b0;
             instruction            <= 16'd0;
             gpio_out               <= 8'd0;
             wait_counter           <= 8'd0;
@@ -162,6 +174,18 @@ module protocol_core (
             end
 
         end else begin
+
+            // SpaceGuard: one-clock heartbeat on actual PC progress.
+            execution_progress <= 1'b0;
+
+            if (program_mode) begin
+                pc_prev <= pc;
+            end else begin
+                if (pc != pc_prev)
+                    execution_progress <= 1'b1;
+
+                pc_prev <= pc;
+            end
 
             // Default: UART start is a one-clock pulse
             uart_tx_start <= 1'b0;

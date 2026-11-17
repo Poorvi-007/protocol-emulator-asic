@@ -21,6 +21,11 @@ module tt_um_protocol_emulator (
     wire [7:0] timing_divider;
     wire timing_tick;
 
+    // SpaceGuard watchdog interface
+    wire execution_progress;
+    wire wait_active;
+    wire watchdog_fault;
+
     // Programming interface
     wire load_en;
     wire [3:0] load_addr;
@@ -98,7 +103,23 @@ module tt_um_protocol_emulator (
         .spi_tx_data(spi_tx_data),
         .spi_divider(spi_divider),
         .spi_mode(spi_mode),
-        .spi_start(spi_start)
+        .spi_start(spi_start),
+        .execution_progress(execution_progress),
+        .wait_active(wait_active)
+    );
+
+    // SpaceGuard independent processor watchdog
+    watchdog #(
+        .HEARTBEAT_TIMEOUT(1000),
+        .WAIT_TIMEOUT(100000)
+    ) spaceguard_watchdog (
+        .clk(clk),
+        .rst_n(rst_n),
+        .enable(!program_mode),
+        .heartbeat(execution_progress),
+        .wait_active(wait_active),
+        .clear_fault(1'b0),
+        .fault(watchdog_fault)
     );
 
     // Processor timing generator

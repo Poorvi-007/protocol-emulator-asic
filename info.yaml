@@ -19,6 +19,7 @@ project:
     - "uart_tx.v"
     - "uart_rx.v"
     - "spi_master.v"
+    - "watchdog.v"
 
 pinout:
   # Inputs
