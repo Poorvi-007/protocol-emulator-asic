@@ -32,11 +32,14 @@ module protocol_core (
     output wire [1:0] spi_mode,
     output reg        spi_start,
     output reg        execution_progress,
-    output wire       wait_active
+    output reg        processor_alive,
+    output wire       wait_active,
+    output wire       wait_timeout_active
 );
 
     reg [3:0] pc;
     reg [3:0] pc_prev;
+    reg [3:0] processor_alive_counter;
     reg [15:0] program_mem [0:15];
 
     reg [15:0] instruction;
@@ -96,8 +99,11 @@ module protocol_core (
 
     // SpaceGuard watchdog monitoring signals
     assign wait_active = !program_mode &&
-        ((program_mem[pc][15:12] == OP_WAIT) ||
-         (program_mem[pc][15:12] == OP_WAIT_EDGE));
+    ((program_mem[pc][15:12] == OP_WAIT) ||
+     (program_mem[pc][15:12] == OP_WAIT_EDGE));
+
+assign wait_timeout_active = !program_mode &&
+    (program_mem[pc][15:12] == OP_WAIT);
 
 
     localparam OP_REG_WRITE    = 4'b1100;
@@ -152,6 +158,8 @@ module protocol_core (
             pc                     <= 4'd0;
             pc_prev                <= 4'd0;
             execution_progress     <= 1'b0;
+            processor_alive        <= 1'b0;
+            processor_alive_counter <= 4'd0;
             instruction            <= 16'd0;
             gpio_out               <= 8'd0;
             wait_counter           <= 8'd0;
@@ -177,6 +185,17 @@ module protocol_core (
 
             // SpaceGuard: one-clock heartbeat on actual PC progress.
             execution_progress <= 1'b0;
+            // SpaceGuard: periodic processor-alive heartbeat.
+processor_alive <= 1'b0;
+
+if (program_mode) begin
+    processor_alive_counter <= 4'd0;
+end else if (processor_alive_counter == 4'd15) begin
+    processor_alive_counter <= 4'd0;
+    processor_alive <= 1'b1;
+end else begin
+    processor_alive_counter <= processor_alive_counter + 1'b1;
+end
 
             if (program_mode) begin
                 pc_prev <= pc;

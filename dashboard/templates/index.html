@@ -1,300 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Protocol Emulator ASIC</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-        }
-
-        header {
-            background: #111827;
-            padding: 20px 30px;
-            border-bottom: 1px solid #334155;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 26px;
-        }
-
-        header p {
-            margin: 6px 0 0;
-            color: #94a3b8;
-        }
-
-        .container {
-            padding: 25px;
-            max-width: 1400px;
-            margin: auto;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .run {
-            background: #22c55e;
-            color: white;
-        }
-
-        .pause {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .reset {
-            background: #ef4444;
-            color: white;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 18px;
-        }
-
-        .card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 20px;
-        }
-
-        .card h2 {
-            margin-top: 0;
-            font-size: 18px;
-            color: #38bdf8;
-        }
-
-        .value {
-            font-size: 28px;
-            font-weight: bold;
-            margin-top: 12px;
-        }
-
-        .binary {
-            font-family: monospace;
-            letter-spacing: 3px;
-        }
-
-        .status {
-            color: #22c55e;
-        }
-
-        .memory {
-            grid-column: span 2;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 9px;
-            text-align: left;
-            border-bottom: 1px solid #334155;
-        }
-
-        th {
-            color: #94a3b8;
-        }
-
-        .waveform {
-            grid-column: span 3;
-        }
-
-        .signal {
-            height: 35px;
-            background: #0f172a;
-            margin: 10px 0;
-            border-radius: 5px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .signal-label {
-            position: absolute;
-            left: 10px;
-            top: 9px;
-            font-family: monospace;
-            z-index: 2;
-        }
-
-        .line {
-            position: absolute;
-            top: 22px;
-            left: 0;
-            width: 100%;
-            border-top: 3px solid #38bdf8;
-        }
-
-        .line.high {
-            top: 8px;
-        }
-
-        @media (max-width: 900px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-
-            .memory,
-            .waveform {
-                grid-column: span 1;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpaceGuard | Satellite Mission Control</title>
+<style>
+:root {
+ --bg:#080d18; --panel:#111d30; --panel2:#15243a;
+ --border:#263b57; --text:#e5edf8; --muted:#8fa5c3;
+ --blue:#62b8ff; --green:#55e6a5; --yellow:#ffcb70;
+ --red:#ff737d; --purple:#b69cff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+header{padding:22px 5%;background:#101a2b;border-bottom:1px solid var(--border);
+ display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+h1{margin:0;font-size:25px;letter-spacing:1.5px}
+header p{margin:7px 0 0;color:var(--muted);font-size:13px}
+.header-right{text-align:right;font-size:12px;color:var(--green)}
+.container{max-width:1500px;margin:auto;padding:25px 5%}
+.hero{padding:25px;border:1px solid #294568;border-radius:15px;
+ background:linear-gradient(120deg,#142944,#101b2e 65%,#17223a)}
+.eyebrow{color:var(--blue);font-size:11px;letter-spacing:2px;font-weight:bold}
+.hero h2{font-size:27px;margin:10px 0}
+.hero p{color:var(--muted);line-height:1.7;font-size:13px;max-width:850px}
+.section-title{font-size:15px;margin:30px 0 14px;color:#a9c5e9;
+ letter-spacing:1.2px;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+ padding:18px;min-width:0}
+.card h3{font-size:12px;color:var(--muted);margin:0 0 14px;letter-spacing:.8px;font-weight:bold}
+.value{font-size:23px;font-weight:bold;overflow-wrap:anywhere}
+.sub{font-size:12px;color:#8297b4;margin-top:9px;line-height:1.6}
+.green{color:var(--green)} .blue{color:var(--blue)}
+.yellow{color:var(--yellow)} .red{color:var(--red)} .purple{color:var(--purple)}
+.wide{grid-column:span 2}.full{grid-column:1/-1}
+.pill{display:inline-block;padding:5px 9px;border-radius:20px;
+ background:#173b32;color:var(--green);font-size:10px;font-weight:bold}
+.pending{background:#45351a;color:var(--yellow)}
+.offline{background:#43232b;color:var(--red)}
+.neutral{background:#20344d;color:#a9c5e9}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:12px 8px;border-bottom:1px solid #283950;vertical-align:top}
+th{color:var(--muted);font-weight:normal}
+.architecture{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 0}
+.arch-node{width:min(440px,95%);padding:13px;text-align:center;border:1px solid #345477;
+ border-radius:9px;background:#142740;font-size:13px;font-weight:bold}
+.arch-node small{display:block;color:var(--muted);font-weight:normal;margin-top:5px}
+.arch-arrow{color:var(--blue);font-size:19px}
+.arch-branches{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(650px,95%)}
+.arch-branches .arch-node{width:100%}
+.signal{display:flex;justify-content:space-between;gap:12px;padding:12px 0;
+ border-bottom:1px solid #283950;font-size:12px}
+.signal:last-child{border-bottom:0}
+.step{display:flex;gap:13px;padding:12px 0;border-bottom:1px solid #283950}
+.step:last-child{border-bottom:0}
+.step-no{width:27px;height:27px;flex-shrink:0;border-radius:50%;background:#203b59;
+ display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:12px}
+.step strong{font-size:13px}.step p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.progress{height:7px;background:#26354a;border-radius:10px;margin:10px 0 18px;overflow:hidden}
+.progress span{display:block;height:100%;background:var(--blue);border-radius:10px}
+.note{color:#8297b4;font-size:11px;line-height:1.8;margin-top:25px}
+footer{padding:20px 5%;border-top:1px solid var(--border);color:#8297b4;font-size:11px}
+@media(max-width:950px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){
+ .grid{grid-template-columns:1fr}.wide{grid-column:span 1}
+ .container{padding:18px 4%}.hero h2{font-size:22px}
+ header{padding:18px 4%}.header-right{text-align:left}
+}
+</style>
 </head>
-
 <body>
-
 <header>
-    <h1>Protocol Emulator ASIC</h1>
-    <p>Programmable digital protocol emulator</p>
+ <div>
+  <h1>SPACEGUARD <span class="blue">/</span> MISSION CONTROL</h1>
+  <p>Fault-Tolerant Satellite Communication &amp; Onboard Control ASIC</p>
+ </div>
+ <div class="header-right">● DASHBOARD ONLINE<br><span style="color:var(--muted)">ENGINEERING SIMULATION PROTOTYPE</span></div>
 </header>
 
-<div class="container">
+<main class="container">
 
-    <div class="controls">
-        <button class="run">▶ RUN</button>
-        <button class="pause">⏸ PAUSE</button>
-        <button class="reset">↻ RESET</button>
+ <section class="hero">
+  <div class="eyebrow">SATELLITE SYSTEM MONITORING PLATFORM</div>
+  <h2>Mission Health &amp; Fault Recovery Centre</h2>
+  <p>
+   SpaceGuard explores reliable onboard digital control through programmable
+   protocol execution, communication interfaces, watchdog monitoring,
+   fault classification and processor recovery logic.
+  </p>
+  <span class="pill neutral">VERILOG RTL PROJECT</span>
+  <span class="pill pending">DEVELOPMENT PROTOTYPE</span>
+ </section>
+
+ <div class="section-title">01 / MISSION OVERVIEW</div>
+ <section class="grid">
+  <article class="card">
+   <h3>PROJECT STATUS</h3>
+   <div class="value green">DEVELOPMENT</div>
+   <div class="sub">RTL development and integration</div>
+  </article>
+  <article class="card">
+   <h3>PROCESSOR HEARTBEAT</h3>
+   <div class="value yellow">NOT CONNECTED</div>
+   <div class="sub">processor_alive RTL signal created; dashboard telemetry connection pending</div>
+  </article>
+  <article class="card">
+   <h3>WATCHDOG MODULE</h3>
+   <div class="value green">DEVELOPED</div>
+   <div class="sub">Heartbeat timeout and wait-state handling</div>
+  </article>
+  <article class="card">
+   <h3>FAULT MANAGER</h3>
+   <div class="value green">DEVELOPED</div>
+   <div class="sub">Fault recording and severity classification</div>
+  </article>
+ </section>
+
+ <div class="section-title">02 / SATELLITE DIGITAL ARCHITECTURE</div>
+ <section class="grid">
+  <article class="card full">
+   <h3>SPACEGUARD FUNCTIONAL BLOCK DIAGRAM</h3>
+   <div class="architecture">
+    <div class="arch-node">PROTOCOL PROCESSOR / CORE
+     <small>Instruction execution · GPIO · control logic</small></div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-branches">
+     <div class="arch-node">UART INTERFACE<small>Serial TX / RX</small></div>
+     <div class="arch-node">SPI MASTER<small>Clocked serial communication</small></div>
     </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-node">WATCHDOG MONITOR
+     <small>Heartbeat and timeout detection</small></div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-node">FAULT MANAGER
+     <small>Fault status · severity · interrupt</small></div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-node">RECOVERY CONTROLLER
+     <small>Processor reset · heartbeat confirmation · retry handling</small></div>
+   </div>
+   <div class="sub">Conceptual functional architecture. Final top-level connections and recovery behaviour must be verified in simulation.</div>
+  </article>
+ </section>
 
-    <div class="grid">
+ <div class="section-title">03 / SUBSYSTEM MONITOR</div>
+ <section class="grid">
+  <article class="card">
+   <h3>UART COMMUNICATION</h3>
+   <div class="value blue">RTL MODULE</div>
+   <div class="sub">Transmitter and receiver</div>
+   <span class="pill neutral">TELEMETRY NOT CONNECTED</span>
+  </article>
+  <article class="card">
+   <h3>SPI COMMUNICATION</h3>
+   <div class="value blue">RTL MODULE</div>
+   <div class="sub">SPI master interface</div>
+   <span class="pill neutral">TELEMETRY NOT CONNECTED</span>
+  </article>
+  <article class="card">
+   <h3>GPIO CONTROLLER</h3>
+   <div class="value green">8-BIT</div>
+   <div class="sub">Digital input and output interface</div>
+  </article>
+  <article class="card">
+   <h3>FAULT INTERRUPT</h3>
+   <div class="value yellow">UIO[6]</div>
+   <div class="sub">Top-level output mapping; full recovery path verification pending</div>
+  </article>
+ </section>
 
-        <div class="card">
-            <h2>System Status</h2>
-            <div class="value status">READY</div>
-        </div>
+ <div class="section-title">04 / FAULT DETECTION &amp; CLASSIFICATION</div>
+ <section class="grid">
+  <article class="card">
+   <h3>SEVERITY LEVELS</h3>
+   <p><span class="pill">NORMAL</span></p>
+   <p><span class="pill pending">WARNING</span></p>
+   <p><span class="pill pending">MAJOR</span></p>
+   <p><span class="pill offline">CRITICAL</span></p>
+   <div class="sub">Severity encoding supported by fault manager RTL</div>
+  </article>
+  <article class="card wide">
+   <h3>FAULT SOURCE REGISTER</h3>
+   <table>
+    <tr><th>Channel</th><th>Fault source</th><th>Severity</th><th>State</th></tr>
+    <tr><td>F0</td><td>Watchdog timeout</td><td class="red">Critical</td><td>RTL input mapped</td></tr>
+    <tr><td>F4</td><td>UART framing error</td><td class="yellow">Warning</td><td>RTL input mapped</td></tr>
+    <tr><td>F1–F3</td><td>Reserved fault inputs</td><td>—</td><td>Reserved</td></tr>
+    <tr><td>F5–F7</td><td>Reserved fault inputs</td><td>—</td><td>Reserved</td></tr>
+   </table>
+  </article>
+ </section>
 
-        <div class="card">
-            <h2>Clock</h2>
-            <div class="value">0 MHz</div>
-        </div>
+ <div class="section-title">05 / AUTONOMOUS RECOVERY MONITOR</div>
+ <section class="grid">
+  <article class="card">
+   <h3>RECOVERY CONTROLLER</h3>
+   <div class="value green">MODULE TESTED</div>
+   <div class="sub">Standalone recovery controller testbench has passed. Top-level integration remains pending.</div>
+  </article>
+  <article class="card">
+   <h3>PROCESSOR RESET</h3>
+   <div class="value yellow">PENDING</div>
+   <div class="sub">Top-level reset path not yet verified</div>
+  </article>
+  <article class="card">
+   <h3>RECOVERY ATTEMPTS</h3>
+   <div class="value blue">NOT AVAILABLE</div>
+   <div class="sub">Counter exists in controller RTL; dashboard connection pending</div>
+  </article>
+  <article class="card">
+   <h3>RECOVERY RESULT</h3>
+   <div class="value yellow">NOT CONNECTED</div>
+   <div class="sub">Success and failure telemetry not connected</div>
+  </article>
+  <article class="card full">
+   <h3>RECOVERY SEQUENCE — FUNCTIONAL INTENT</h3>
+   <div class="step"><div class="step-no">1</div><div><strong>Fault detection</strong><p>Watchdog detects a missed heartbeat or timeout condition.</p></div></div>
+   <div class="step"><div class="step-no">2</div><div><strong>Fault classification</strong><p>Fault manager records the fault and assigns its severity.</p></div></div>
+   <div class="step"><div class="step-no">3</div><div><strong>Processor reset</strong><p>Recovery controller requests a controlled processor reset.</p></div></div>
+   <div class="step"><div class="step-no">4</div><div><strong>Heartbeat confirmation</strong><p>Controller checks for processor activity after reset release.</p></div></div>
+   <div class="step"><div class="step-no">5</div><div><strong>Recovery outcome</strong><p>Controller reports success or failure after its retry policy.</p></div></div>
+   <div class="sub">This describes the intended recovery flow. Do not interpret it as proof that the complete top-level sequence is already working.</div>
+  </article>
+ </section>
 
-        <div class="card">
-            <h2>Program Counter</h2>
-            <div class="value">0</div>
-        </div>
+ <div class="section-title">06 / VERIFICATION CENTRE</div>
+ <section class="grid">
+  <article class="card">
+   <h3>COCOTB TEST RESULTS</h3>
+   {% if test_results.available %}
+    <div class="value green">{{ test_results.passed }} / {{ test_results.total }}</div>
+    <div class="sub">Tests passed</div>
+    <div class="progress"><span style="width:{{ (test_results.passed / test_results.total * 100) if test_results.total else 0 }}%"></span></div>
+    <div class="sub">Failed: <span class="red">{{ test_results.failed }}</span><br>Skipped: {{ test_results.skipped }}</div>
+   {% else %}
+    <div class="value yellow">NO DATA</div>
+    <div class="sub">Test results file unavailable</div>
+   {% endif %}
+  </article>
+  <article class="card">
+   <h3>RECORDED VERIFICATION</h3>
+   {% if test_results.available and test_results.failed == 0 %}
+    <div class="value green">PASS</div>
+    <div class="sub">No failures in the recorded XML report</div>
+   {% elif test_results.available %}
+    <div class="value red">FAIL</div>
+    <div class="sub">One or more recorded tests failed</div>
+   {% else %}
+    <div class="value yellow">UNKNOWN</div>
+    <div class="sub">No readable test report</div>
+   {% endif %}
+  </article>
+  <article class="card wide">
+   <h3>LAST RECORDED TEST RUN</h3>
+   <div class="value blue">COCOTB</div>
+   <div class="sub">{{ test_results.timestamp }}</div>
+   <div class="sub">Source: test/results.xml</div>
+  </article>
+  <article class="card full">
+   <h3>VERIFICATION SCOPE</h3>
+   <table>
+    <tr><th>Component</th><th>Verification approach</th><th>Dashboard status</th></tr>
+    <tr><td>Watchdog</td><td>Standalone testbench</td><td>Previously tested</td></tr>
+    <tr><td>Fault manager</td><td>Standalone testbench</td><td>Previously tested</td></tr>
+    <tr><td>Recovery controller</td><td>Recovery and retry testbenches</td><td>Previously tested</td></tr>
+    <tr><td>Full top-level recovery</td><td>Integrated simulation</td><td class="yellow">Pending</td></tr>
+   </table>
+   <div class="sub">Component test status and full-system integration status are different verification claims.</div>
+  </article>
+ </section>
 
-        <div class="card">
-            <h2>Current Instruction</h2>
-            <div class="value">NOP</div>
-        </div>
+ <div class="section-title">07 / SIGNAL &amp; TELEMETRY INTERFACE</div>
+ <section class="grid">
+  <article class="card full">
+   <h3>RTL SIGNAL CONNECTION STATUS</h3>
+   <div class="signal"><span>CLK / RESET</span><span class="yellow">Simulation telemetry not connected</span></div>
+   <div class="signal"><span>PROCESSOR_ALIVE</span><span class="yellow">RTL output created · top-level connection pending</span></div>
+   <div class="signal"><span>EXECUTION_PROGRESS</span><span class="yellow">RTL signal · dashboard connection pending</span></div>
+   <div class="signal"><span>WATCHDOG_FAULT</span><span class="yellow">Dashboard telemetry not connected</span></div>
+   <div class="signal"><span>FAULT_IRQ</span><span class="yellow">UIO[6] mapping · live telemetry pending</span></div>
+   <div class="signal"><span>RECOVERY_ACTIVE / SUCCESS / FAILED</span><span class="yellow">Controller outputs · integration pending</span></div>
+   <div class="signal"><span>UART / SPI ACTIVITY</span><span class="yellow">Dashboard telemetry not connected</span></div>
+  </article>
+ </section>
 
-        <div class="card">
-            <h2>Shift Register</h2>
-            <div class="value binary">00000000</div>
-        </div>
+ <div class="section-title">08 / DEVELOPMENT TRACKER</div>
+ <section class="grid">
+  <article class="card full">
+   <h3>SPACEGUARD ENGINEERING ROADMAP</h3>
+   <p class="sub">Protocol processor and communication RTL</p>
+   <div class="progress"><span style="width:100%"></span></div>
+   <p class="sub">Watchdog and fault manager module development</p>
+   <div class="progress"><span style="width:100%"></span></div>
+   <p class="sub">Recovery controller standalone verification</p>
+   <div class="progress"><span style="width:100%"></span></div>
+   <p class="sub">Top-level recovery integration and verification</p>
+   <div class="progress"><span style="width:25%"></span></div>
+   <p class="sub">Simulation telemetry and dashboard connection</p>
+   <div class="progress"><span style="width:0%"></span></div>
+   <p class="sub">ASIC synthesis and physical implementation</p>
+   <div class="progress"><span style="width:0%"></span></div>
+   <div class="sub">Progress bars are illustrative roadmap indicators, not measured completion percentages.</div>
+  </article>
+ </section>
 
-        <div class="card">
-            <h2>Protocol</h2>
-            <div class="value">UART</div>
-        </div>
+ <p class="note">
+  ENGINEERING DEMONSTRATION DASHBOARD · LOCAL FLASK APPLICATION<br>
+  This dashboard reads recorded Cocotb results from test/results.xml.
+  Processor, watchdog and recovery telemetry are not yet connected to this page.
+  Any pending status is intentionally shown rather than presenting invented live readings.
+  SpaceGuard is a Verilog development prototype; it is not a fabricated,
+  flight-tested, aerospace-qualified or flight-certified ASIC.
+ </p>
+</main>
 
-        <div class="card">
-            <h2>GPIO Input</h2>
-            <div class="value binary">00000000</div>
-        </div>
-
-        <div class="card">
-            <h2>GPIO Output</h2>
-            <div class="value binary">00000000</div>
-        </div>
-
-        <div class="card memory">
-            <h2>Program Memory</h2>
-
-            <table>
-                <tr>
-                    <th>Address</th>
-                    <th>Instruction</th>
-                    <th>Opcode</th>
-                    <th>Data</th>
-                </tr>
-
-                <tr>
-                    <td>0</td>
-                    <td>WRITE</td>
-                    <td>0001</td>
-                    <td>00000001</td>
-                </tr>
-
-                <tr>
-                    <td>1</td>
-                    <td>WRITE</td>
-                    <td>0001</td>
-                    <td>00000010</td>
-                </tr>
-
-                <tr>
-                    <td>2</td>
-                    <td>WRITE</td>
-                    <td>0001</td>
-                    <td>00000100</td>
-                </tr>
-
-                <tr>
-                    <td>3</td>
-                    <td>READ</td>
-                    <td>0010</td>
-                    <td>00000000</td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="card waveform">
-
-            <h2>Signal Monitor</h2>
-
-            <div class="signal">
-                <span class="signal-label">CLK</span>
-                <div class="line high"></div>
-            </div>
-
-            <div class="signal">
-                <span class="signal-label">GPIO_IN</span>
-                <div class="line"></div>
-            </div>
-
-            <div class="signal">
-                <span class="signal-label">GPIO_OUT</span>
-                <div class="line high"></div>
-            </div>
-
-            <div class="signal">
-                <span class="signal-label">SHIFT_REG</span>
-                <div class="line"></div>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
+<footer>SPACEGUARD · SATELLITE DIGITAL CONTROL ASIC · ENGINEERING DEVELOPMENT</footer>
+<script>
+/* Refresh recorded test results periodically. This does not create live RTL telemetry. */
+setInterval(function(){ window.location.reload(); }, 10000);
+</script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2024 Your Name
  * SPDX-License-Identifier: Apache-2.0
@@ -21,10 +22,79 @@ module tt_um_protocol_emulator (
     wire [7:0] timing_divider;
     wire timing_tick;
 
-    // SpaceGuard watchdog interface
+    // SpaceGuard watchdog
     wire execution_progress;
     wire wait_active;
+    wire wait_timeout_active;
+    wire processor_alive;
     wire watchdog_fault;
+
+    // SpaceGuard recovery signals
+    wire processor_reset_n;
+    wire subsystem_reset_n;
+    wire recovery_active;
+    wire recovery_success;
+    wire recovery_failed;
+    wire [7:0] recovery_attempts;
+
+    // Sequenced fault-clear controls
+    reg watchdog_clear;
+    reg fault_clear;
+
+    // Sequencer for safely clearing recovered faults.
+    localparam CLEAR_IDLE = 2'd0;
+    localparam CLEAR_WATCHDOG = 2'd1;
+    localparam CLEAR_FAULTS = 2'd2;
+
+    reg [1:0] clear_state;
+
+    // Processor subsystem reset; SpaceGuard protection stays active.
+    assign subsystem_reset_n = rst_n & processor_reset_n;
+
+    // Clear watchdog first, then clear the recorded fault.
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            clear_state <= CLEAR_IDLE;
+            watchdog_clear <= 1'b0;
+            fault_clear <= 1'b0;
+        end else begin
+            watchdog_clear <= 1'b0;
+            fault_clear <= 1'b0;
+
+            case (clear_state)
+                CLEAR_IDLE: begin
+                    if (recovery_success)
+                        clear_state <= CLEAR_WATCHDOG;
+                end
+
+                CLEAR_WATCHDOG: begin
+                    watchdog_clear <= 1'b1;
+                    clear_state <= CLEAR_FAULTS;
+                end
+
+                CLEAR_FAULTS: begin
+                    if (!watchdog_fault) begin
+                        fault_clear <= 1'b1;
+                        clear_state <= CLEAR_IDLE;
+                    end
+                end
+
+                default: begin
+                    clear_state <= CLEAR_IDLE;
+                end
+            endcase
+        end
+    end
+
+    // SpaceGuard Fault Manager
+    wire [7:0] fault_status;
+    wire [1:0] fault_severity;
+    wire fault_irq;
+    wire fault_active;
+    wire critical_fault;
+
+    wire [7:0] fault_inputs;
+    wire [7:0] fault_enable;
 
     // Programming interface
     wire load_en;
@@ -62,6 +132,19 @@ module tt_um_protocol_emulator (
 
     assign program_mode = ui_in[2];
 
+    // Initial implemented fault sources:
+    // F0 = Watchdog timeout (critical)
+    // F4 = UART framing error (warning)
+    // Other channels reserved until detectors are implemented.
+    assign fault_inputs = {
+        3'b000,
+        uart_rx_framing_error,
+        3'b000,
+        watchdog_fault
+    };
+
+    assign fault_enable = 8'hFF;
+
     // Serial program loader
     serial_loader loader (
         .clk(clk),
@@ -76,7 +159,7 @@ module tt_um_protocol_emulator (
     // Main protocol controller
     protocol_core core (
         .clk(clk),
-        .rst_n(rst_n),
+        .rst_n(subsystem_reset_n),
         .gpio_in(ui_in),
         .gpio_out(gpio_out),
         .timing_divider(timing_divider),
@@ -105,7 +188,8 @@ module tt_um_protocol_emulator (
         .spi_mode(spi_mode),
         .spi_start(spi_start),
         .execution_progress(execution_progress),
-        .wait_active(wait_active)
+        .wait_active(wait_active),
+        .wait_timeout_active(wait_timeout_active)
     );
 
     // SpaceGuard independent processor watchdog
@@ -115,11 +199,44 @@ module tt_um_protocol_emulator (
     ) spaceguard_watchdog (
         .clk(clk),
         .rst_n(rst_n),
-        .enable(!program_mode),
+        .enable(!program_mode && !recovery_active),
         .heartbeat(execution_progress),
         .wait_active(wait_active),
-        .clear_fault(1'b0),
+        .wait_timeout_active(wait_timeout_active),
+        .clear_fault(watchdog_clear),
         .fault(watchdog_fault)
+    );
+
+    // SpaceGuard automatic processor recovery controller
+    recovery_controller #(
+        .RESET_CYCLES(10),
+        .RECOVERY_TIMEOUT(100),
+        .MAX_ATTEMPTS(3)
+    ) spaceguard_recovery (
+        .clk(clk),
+        .rst_n(rst_n),
+        .critical_fault(critical_fault),
+        .recovery_enable(!program_mode),
+        .processor_heartbeat(execution_progress),
+        .processor_reset_n(processor_reset_n),
+        .recovery_active(recovery_active),
+        .recovery_success(recovery_success),
+        .recovery_failed(recovery_failed),
+        .recovery_attempts(recovery_attempts)
+    );
+
+    // SpaceGuard Fault Manager
+    fault_manager spaceguard_fault_manager (
+        .clk(clk),
+        .rst_n(rst_n),
+        .fault_in(fault_inputs),
+        .fault_enable(fault_enable),
+        .clear_faults(fault_clear),
+        .fault_status(fault_status),
+        .fault_severity(fault_severity),
+        .fault_irq(fault_irq),
+        .fault_active(fault_active),
+        .critical_fault(critical_fault)
     );
 
     // Processor timing generator
@@ -191,10 +308,12 @@ module tt_um_protocol_emulator (
     // uio[3] = SPI MOSI
     // uio[4] = SPI MISO
     // uio[5] = SPI CS_N
-    // uio[6:7] = Reserved
+    // uio[6] = SpaceGuard FAULT_IRQ
+    // uio[7] = Reserved
 
     assign uio_out = {
-        2'b00,
+        1'b0,
+        fault_irq,
         spi_cs_n,
         1'b0,
         spi_mosi,
@@ -204,7 +323,7 @@ module tt_um_protocol_emulator (
     };
 
     // 1 = output, 0 = input
-    assign uio_oe = 8'b00101110;
+    assign uio_oe = 8'b01101110;
 
 endmodule
 

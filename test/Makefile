@@ -6,7 +6,7 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = ../src
-PROJECT_SOURCES = watchdog.v protocol_core.v serial_loader.v timing_generator.v uart_timing_generator.v uart_tx.v uart_rx.v spi_master.v project.v
+PROJECT_SOURCES = watchdog.v fault_manager.v protocol_core.v serial_loader.v timing_generator.v uart_timing_generator.v uart_tx.v uart_rx.v spi_master.v recovery_controller.v project.v
 
 ifneq ($(GATES),yes)
 

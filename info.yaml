@@ -20,6 +20,8 @@ project:
     - "uart_rx.v"
     - "spi_master.v"
     - "watchdog.v"
+    - "fault_manager.v"
+    - "recovery_controller.v"
 
 pinout:
   # Inputs
@@ -49,7 +51,7 @@ pinout:
   uio[3]: "SPI_MOSI"
   uio[4]: "SPI_MISO"
   uio[5]: "SPI_CS_N"
-  uio[6]: "Unused"
+  uio[6]: "SpaceGuard FAULT_IRQ"
   uio[7]: "Unused"
 
 yaml_version: 6
