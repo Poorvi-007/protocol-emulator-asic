@@ -62,7 +62,7 @@ module serial_loader_tb;
         end
 
 
-if (load_data == test_instruction2 && load_addr == 4'd2)
+if (load_data == test_instruction2 && load_addr == 4'd1)
     $display("SERIAL LOADER PASS");
 else
     $display("SERIAL LOADER FAIL: data=%h address=%d",
