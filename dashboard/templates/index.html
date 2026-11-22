@@ -284,7 +284,58 @@ footer{padding:20px 5%;border-top:1px solid var(--border);color:#8297b4;font-siz
   </article>
  </section>
 
- <div class="section-title">08 / DEVELOPMENT TRACKER</div>
+
+ <div class="section-title">08 / SPACEGUARD SIMULATION TELEMETRY</div>
+ <section class="grid">
+  <article class="card full">
+   <h3>RECORDED RTL SIMULATION WAVEFORMS</h3>
+   <p class="sub">
+    Actual signals recorded from the SpaceGuard top-level recovery testbench.
+    Time axis is in picoseconds. Re-run the simulation to refresh this trace.
+   </p>
+
+   {% if telemetry.available %}
+   <div class="signal">
+    <span>SIMULATION STATUS</span>
+    <span class="green">TRACE AVAILABLE</span>
+   </div>
+   <div class="signal">
+    <span>RECORDED SAMPLES</span>
+    <span id="telemetrySampleCount">{{ telemetry.total_samples }}</span>
+   </div>
+   <div class="signal">
+    <span>AUTOMATED SIMULATION</span>
+    <span id="simulationScenario" class="green">WAITING</span>
+</div>
+   <div class="signal">
+    <span>SIMULATION END TIME</span>
+    <span id="telemetryEndTime">{{ telemetry.end_time_ps }} ps</span>
+   </div>
+
+   <div style="width:100%; overflow-x:auto; margin-top:18px;">
+    <canvas id="spaceguardWaveform"
+      style="width:100%; min-width:650px; height:430px; display:block;">
+    </canvas>
+   </div>
+   <p class="sub">
+    Digital waveform lanes: clock, reset, processor heartbeat,
+    watchdog, critical fault and recovery controller signals.
+    Recovery attempts are shown as a separate numeric trace.
+   </p>
+
+   <div id="telemetryLegend" class="signal"></div>
+   {% else %}
+   <div class="signal">
+    <span>SIMULATION TELEMETRY</span>
+    <span class="yellow">{{ telemetry.message }}</span>
+   </div>
+   {% endif %}
+  </article>
+ </section>
+
+ <div class="section-title">09 / DEVELOPMENT TRACKER</div>
+
+
  <section class="grid">
   <article class="card full">
    <h3>SPACEGUARD ENGINEERING ROADMAP</h3>
@@ -316,8 +367,295 @@ footer{padding:20px 5%;border-top:1px solid var(--border);color:#8297b4;font-siz
 
 <footer>SPACEGUARD · SATELLITE DIGITAL CONTROL ASIC · ENGINEERING DEVELOPMENT</footer>
 <script>
-/* Refresh recorded test results periodically. This does not create live RTL telemetry. */
-setInterval(function(){ window.location.reload(); }, 10000);
+
+
+/* Draw recorded SpaceGuard RTL simulation waveforms. */
+let telemetryData = {{ telemetry.samples | tojson }};
+
+function drawSpaceGuardWaveform() {
+    const canvas = document.getElementById("spaceguardWaveform");
+
+    if (!canvas || !telemetryData || telemetryData.length === 0) {
+        return;
+    }
+
+    const ctx = canvas.getContext("2d");
+
+    const W = 1100;
+    const H = 430;
+    const left = 205;
+    const right = 25;
+    const top = 25;
+    const laneHeight = 36;
+    const plotWidth = W - left - right;
+
+    canvas.width = W;
+    canvas.height = H;
+
+    ctx.fillStyle = "#0b1220";
+    ctx.fillRect(0, 0, W, H);
+
+    const tracks = [
+        ["Clock", "clk"],
+        ["External reset", "rst_n"],
+        ["Processor reset", "processor_reset_n"],
+        ["Execution heartbeat", "execution_progress"],
+        ["Watchdog fault", "watchdog_fault"],
+        ["Critical fault", "critical_fault"],
+        ["Recovery active", "recovery_active"],
+        ["Recovery success", "recovery_success"],
+        ["Recovery failed", "recovery_failed"],
+        ["Recovery attempts", "recovery_attempts"]
+    ];
+
+    const start = telemetryData[0].time_ps;
+    const end = telemetryData[telemetryData.length - 1].time_ps;
+    const duration = Math.max(1, end - start);
+
+    ctx.font = "13px Arial";
+    ctx.textBaseline = "middle";
+
+    for (let i = 0; i < 10; i++) {
+        const y = top + i * laneHeight;
+
+        ctx.strokeStyle = "#263449";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(left, y + laneHeight);
+        ctx.lineTo(W - right, y + laneHeight);
+        ctx.stroke();
+
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillText(tracks[i][0], 12, y + 17);
+
+        ctx.fillStyle = "#64748b";
+        ctx.fillText(i === 9 ? "COUNT" : "0 / 1", 155, y + 17);
+    }
+
+    for (let i = 0; i <= 10; i++) {
+        const x = left + (plotWidth * i / 10);
+
+        ctx.strokeStyle = "#263449";
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, top + tracks.length * laneHeight);
+        ctx.stroke();
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.textAlign = "center";
+        ctx.fillText(
+            Math.round((start + duration * i / 10) / 1000) + " ns",
+            x,
+            H - 13
+        );
+    }
+
+    const colors = [
+        "#38bdf8",
+        "#a78bfa",
+        "#22c55e",
+        "#34d399",
+        "#f59e0b",
+        "#ef4444",
+        "#818cf8",
+        "#2dd4bf",
+        "#fb7185",
+        "#facc15"
+    ];
+
+    tracks.forEach((track, lane) => {
+        const key = track[1];
+        const y = top + lane * laneHeight;
+        const isCounter = key === "recovery_attempts";
+
+        ctx.strokeStyle = colors[lane];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        telemetryData.forEach((sample, index) => {
+            const x = left +
+                ((sample.time_ps - start) / duration) * plotWidth;
+
+            let valueY;
+
+            if (isCounter) {
+                valueY = y + 27 -
+                    (Math.min(3, sample[key]) / 3) * 20;
+            } else {
+                valueY = sample[key] ? y + 7 : y + 27;
+            }
+
+            if (index === 0) {
+                ctx.moveTo(x, valueY);
+            } else {
+                ctx.lineTo(x, previousY);
+                ctx.lineTo(x, valueY);
+            }
+
+            var previousY = valueY;
+        });
+
+        ctx.stroke();
+    });
+
+
+    // Detect important SpaceGuard recovery events.
+    const eventDefinitions = [
+        {
+            key: "watchdog_fault",
+            label: "WATCHDOG FAULT",
+            color: "#f59e0b"
+        },
+        {
+            key: "critical_fault",
+            label: "CRITICAL FAULT",
+            color: "#ef4444"
+        },
+        {
+            key: "recovery_active",
+            label: "RECOVERY STARTED",
+            color: "#818cf8"
+        },
+        {
+            key: "recovery_success",
+            label: "RECOVERY SUCCESS",
+            color: "#22c55e"
+        }
+    ];
+
+    const events = [];
+
+    for (let i = 1; i < telemetryData.length; i++) {
+        const previous = telemetryData[i - 1];
+        const current = telemetryData[i];
+
+        eventDefinitions.forEach(definition => {
+            if (previous[definition.key] === 0 &&
+                current[definition.key] === 1) {
+                events.push({
+                    time_ps: current.time_ps,
+                    label: definition.label,
+                    color: definition.color
+                });
+            }
+        });
+
+        if (previous.critical_fault === 1 &&
+            current.critical_fault === 0) {
+            events.push({
+                time_ps: current.time_ps,
+                label: "FAULT CLEARED",
+                color: "#2dd4bf"
+            });
+        }
+    }
+
+    // Draw a numbered vertical marker for every detected event.
+    events.forEach((event, index) => {
+        const x = left +
+            ((event.time_ps - start) / duration) * plotWidth;
+
+        ctx.save();
+        ctx.strokeStyle = event.color;
+        ctx.fillStyle = event.color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, top + tracks.length * laneHeight);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(x, top + 5, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#08111f";
+        ctx.font = "bold 10px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(String(index + 1), x, top + 5);
+
+        ctx.restore();
+    });
+
+    // Build a readable event log below the graph.
+    const eventLog = document.getElementById("telemetryLegend");
+
+    if (eventLog) {
+        eventLog.innerHTML = "";
+        eventLog.style.display = "grid";
+        eventLog.style.gridTemplateColumns =
+            "repeat(auto-fit, minmax(190px, 1fr))";
+        eventLog.style.gap = "8px";
+
+        if (events.length === 0) {
+            eventLog.textContent = "No fault or recovery events detected.";
+        }
+
+        events.forEach((event, index) => {
+            const item = document.createElement("div");
+
+            item.style.padding = "8px";
+            item.style.borderLeft = "3px solid " + event.color;
+            item.style.background = "#111c2e";
+            item.style.color = "#e2e8f0";
+            item.style.fontSize = "12px";
+
+            item.textContent =
+                (index + 1) + ". " + event.label +
+                " · " + (event.time_ps / 1000).toFixed(0) + " ns";
+
+            eventLog.appendChild(item);
+        });
+    }
+
+ctx.textAlign = "left";
+}
+
+drawSpaceGuardWaveform();
+window.addEventListener("resize", drawSpaceGuardWaveform);
+
+/* Automatically run alternating SpaceGuard RTL simulations. */
+async function updateSimulation() {
+    const status = document.getElementById("simulationScenario");
+
+    try {
+        if (status) status.textContent = "RUNNING...";
+
+        const response = await fetch("/api/run_simulation", {
+            method: "POST"
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || "Simulation failed");
+        }
+
+        telemetryData = result.telemetry.samples;
+        drawSpaceGuardWaveform();
+
+        document.getElementById("telemetrySampleCount").textContent =
+            result.telemetry.total_samples;
+
+        document.getElementById("telemetryEndTime").textContent =
+            result.telemetry.end_time_ps + " ps";
+
+        if (status) {
+            status.textContent =
+                result.scenario.toUpperCase() + " SIMULATION · UPDATED";
+        }
+
+    } catch (error) {
+        if (status) status.textContent = "ERROR: " + error.message;
+        console.error("SpaceGuard simulation error:", error);
+    }
+}
+
+/* Run once immediately, then repeat every 10 seconds. */
+updateSimulation();
+setInterval(updateSimulation, 10000);
 </script>
 </body>
 </html>

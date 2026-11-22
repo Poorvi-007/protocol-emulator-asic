@@ -13,6 +13,8 @@ module tb_spaceguard_recovery;
     wire [7:0] uio_out;
     wire [7:0] uio_oe;
 
+    integer telemetry_file;
+
     tt_um_protocol_emulator dut (
         .ui_in(ui_in),
         .uo_out(uo_out),
@@ -25,6 +27,39 @@ module tb_spaceguard_recovery;
     );
 
     always #5 clk = ~clk;
+
+    // Record actual simulation signals at every rising clock edge.
+    initial begin
+        telemetry_file = $fopen("reports/spaceguard_telemetry.csv", "w");
+
+        if (telemetry_file == 0)
+            $fatal(1, "ERROR: Could not create telemetry CSV");
+
+        $fdisplay(telemetry_file,
+            "time_ns,clk,rst_n,processor_reset_n,execution_progress,watchdog_fault,critical_fault,recovery_active,recovery_success,recovery_failed,recovery_attempts");
+
+
+        forever begin
+            @(clk);
+            #1;
+
+            $fdisplay(telemetry_file,
+                "%0t,%b,%b,%b,%b,%b,%b,%b,%b,%b,%0d",
+                $time,
+                clk,
+                rst_n,
+                dut.processor_reset_n,
+                dut.execution_progress,
+                dut.watchdog_fault,
+                dut.critical_fault,
+                dut.recovery_active,
+                dut.recovery_success,
+                dut.recovery_failed,
+                dut.recovery_attempts
+            );
+        end
+
+    end
 
     initial begin
         $display("SPACEGUARD TOP-LEVEL RECOVERY TEST");
@@ -74,6 +109,7 @@ module tb_spaceguard_recovery;
         $display("PASS: Fault cleared and recovery re-armed");
         $display("ALL SPACEGUARD TOP-LEVEL RECOVERY TESTS PASSED");
 
+        $fclose(telemetry_file);
         $finish;
     end
 
